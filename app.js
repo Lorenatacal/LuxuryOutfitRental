@@ -3,6 +3,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const Item = require('./models/Item.model')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -35,6 +36,24 @@ app.get('/items', (req, res, next) => {
   })
 })
 
+app.post('/items', async (req, res, next) => {
+  try{
+    const { name, size, collectionDate, colour, quantityInStock } = req.body
+    const createdItem = await Item.create({ name, size, collectionDate, colour, quantityInStock })
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        createdItem
+      }
+    })
+  }catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid item'
+    })
+  }
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -2,6 +2,7 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const app = require('./app');
 const database = require('./database');
+const Item = require('./models/Item.model')
 
 beforeAll(async(done) => {
     const url = 'mongodb://127.0.0.1/LuxuryOutfitRentalShop'
@@ -42,26 +43,35 @@ describe('POST /items', () => {
             const itemsBefore = await Item.find({})
             numOfItemsBefore = itemsBefore.length;
 
-            res = await supertest(app).post('items').send({ createdItem })
+            res = await supertest(app).post('/items').send(createdItem)
 
             const itemsAfter = await Item.find({})
-            numOfItemsAfter - itemsAfter.length
+            numOfItemsAfter = itemsAfter.length
             done()
         })
         test('the response is 201', () => {
-
+            expect(res.status).toBe(201)
         })
         test('the response body send back the createdItem', () => {
-
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    createdItem
+                }
+            })
         })
         test('the createdItem has an Id', () => {
-
+            expect(res.body.data.createdItem).toHaveProperty('_id')
+            createdId = res.body.data.createdItem._id
         })
-        test('an item with that id exists in the database', () => {
-
+        test('an item with that id exists in the database', async (done) => {
+            const item = await Item.findById(createdId)
+            expect(item).not.toBeNull()
+            expect(item.id).toEqual(createdId)
+            done()
         })
         test('only one item exists in the database', () => {
-            
+            expect(numOfItemsAfter).toEqual(numOfItemsBefore + 1)
         })
     })
 
