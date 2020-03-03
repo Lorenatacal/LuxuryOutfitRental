@@ -3,7 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const Item = require('./models/Item.model')
+var database = require('./database');
+var Item = require('./models/Item.model')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -53,6 +54,15 @@ app.post('/items', async (req, res, next) => {
       message: 'Invalid item'
     })
   }
+})
+
+app.delete('/items/:id', (req, res, next) => {
+  const { id } = req.params
+  delete database.items[id]
+  res.status(200).json({
+    status: 'success',
+    message: `Item ${id} has been deleted`
+  })
 })
 
 // catch 404 and forward to error handler

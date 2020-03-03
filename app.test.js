@@ -74,6 +74,34 @@ describe('POST /items', () => {
             expect(numOfItemsAfter).toEqual(numOfItemsBefore + 1)
         })
     })
+})
 
+describe('DELETE /items/:id', () => {
+    describe('valid id', () => {
+        const idToDelete = 'erd123f'
+        let res
 
+         beforeAll(() => {
+             database.items = {
+                erd123f: 'Blouse',
+                fgt34rfd: 'Jeans'
+             }
+         })
+
+        test('A response will be sent back when the item is deleted', async () => {
+            res = await supertest(app).delete(`/items/${idToDelete}`)
+    
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                status: 'success',
+                message: `Item ${idToDelete} has been deleted`
+            })
+        })
+        // test('The item has been removed from the database', () => {
+
+        // })
+        // test('Only that specific item has been deleted', () => {
+
+        // })
+    })
 })
