@@ -2,7 +2,8 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const app = require('./app');
 const database = require('./database');
-const Item = require('./models/Items/Item.model')
+const Item = require('./models/Items/Item.model');
+const Outfit = require('./models/Outfits/Outfit.model')
 
 beforeAll(async(done) => {
     const url = 'mongodb://127.0.0.1/LuxuryOutfitRentalShop'
@@ -101,11 +102,10 @@ describe('GET /items/:id', () => {
             })
         })
     })
-
     describe('invalid id', () => {
         let res
         test('send a response of 404 when the id does not exist', async (done) => {
-            res = await supertest(app).get('/items/id')
+            res = await supertest(app).get(`/items/${'fdghfà23'}`)
             expect(res.status).toBe(404)
             done()
         })
@@ -114,6 +114,46 @@ describe('GET /items/:id', () => {
             expect(res.body).toMatchObject({
                 status: 'fail',
                 message: 'The item was not found'
+            })
+            done()
+        })
+    })
+})
+
+describe('GET /outfits/:id', () => {
+    describe('valid id', () => {
+        let idToSerch
+        let res
+
+        beforeAll(() => {
+            database.outfits = {
+                ard12drs: 'Dior Night Outfit',
+                fgt34rfd: 'Dior Day Outfit'
+            }
+            idToSerch = 'ard12drs'
+        })
+        test('send a response of 200 when the id exists', async (done) => {
+            res = await supertest(app).get(`/outfits/${idToSerch}`)
+            expect(res.status).toBe(200)
+            done()
+        })
+        test('the response body sends back the expected id', () => {
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    outfit: database.outfits[idToSerch]
+                }
+            })
+        })
+    })
+    describe('invalid id', () => {
+        let res
+        test('send a response of 404 when the id does not exist', async (done) => {
+            res = await supertest(app).get(`/outfits/${'fdghfà23'}`)
+            expect(res.status).toBe(404)
+            expect(res.body).toMatchObject({
+                status: 'fail',
+                message: `The outfit with the id: ${'fdghfà23'} does not exist`
             })
             done()
         })
@@ -151,19 +191,84 @@ describe('DELETE /items/:id', () => {
     })
 })
 
-// describe('POST /Outfit', async () => {
-//     describe('create a new outfit with items inside', () => {
-//         test('Respond with 201 when is successful', () => {
+describe('POST /Outfit', async () => {
+    describe('create a new outfit with items inside', () => {
+        let res, createdOutfit
+        beforeAll(async (done) => {
+            res = await supertest(app).post('/outfits').send({
+                name: 'Glamourous Dior Night Outfit',
+                items: [
+                    {
+                        name: 'Dior Shirt',
+                        size: 'S',
+                        collectionDate: 2019,
+                        colour: 'red',
+                        quantityInStock: 1
+                    },
+                    {
+                        name: 'Skirt',
+                        size: 'S',
+                        collectionDate: 2019,
+                        colour: 'black',
+                        quantityInStock: 1
+                    },
+                    {
+                        name: 'Heels',
+                        size: 'S',
+                        collectionDate: 2019,
+                        colour: 'red',
+                        quantityInStock: 1
+                    },
+                    {
+                        name: 'Bag',
+                        size: 'S',
+                        collectionDate: 2019,
+                        colour: 'black',
+                        quantityInStock: 1
+                    }
+                ]
+            })
+            done()
+        })
+        test('Respond with 201 when is successful', () => {
+            expect(res.status).toBe(201)
+        })
+        test('Returns the created outfit with the response', () => {
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    outfit: {
+                        name: 'Glamourous Dior Night Outfit'
+                    }
+                }
+            })
+            createdOutfit = res.body.data.outfit
+        })
+        test('Creates an outfit that has an array of items ids', () => {
+            expect(createdOutfit).toHaveProperty('items')
+        })
+        test('Has created an item for each of this associated ids', () => {
+            createdOutfit.items.forEach(async (itemId) => {
+                const itemFound = await Outfit.findById(itemId)
+                expect(itemFound).toBeDefined()
+            })
+        })
+    })
+})
 
-//         })
-//         test('Returns the created outfit with the response', () => {
+describe('Get /Outfits', () => {
+    let res
 
-//         })
-//         test('Creates an outfit that has an array of items ids', () => {
-
-//         })
-//         test('Has created an item for each of this associated ids', () => {
-
-//         })
-//     })
-// })
+    beforeAll(async(done) => {
+        res = await supertest(app).get('/outfits')
+        done()
+    })
+    test('send a response of 200', () => {
+        expect(res.status).toBe(200)
+    })
+    test('sends back a body with a status of success', () => {
+        expect(res.body).toMatchObject({
+            status: 'success'
+        })
+    })
+})

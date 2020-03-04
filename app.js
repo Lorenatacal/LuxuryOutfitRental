@@ -4,7 +4,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var database = require('./database');
-var Item = require('./models/Items/Item.model')
+var Item = require('./models/Items/Item.model');
+var Outfit = require('./models/Outfits/Outfit.model')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -56,6 +57,25 @@ app.get('/items/:id', (req, res, next) => {
   }
 })
 
+app.get('/outfits/:id', (req, res, next) => {
+  const { id } = req.params
+  const doesOutfitExist = database.outfits[id]
+
+  if(doesOutfitExist) {
+    res.status(200).json({
+      status: 'success',
+      data: {
+        outfit: database.outfits[id]
+      }
+    })
+  } else {
+    res.status(404).json({
+      status: 'fail',
+      message: `The outfit with the id: ${id} does not exist`
+    })
+  }
+})
+
 app.post('/items', async (req, res, next) => {
   try{
     const { name, size, collectionDate, colour, quantityInStock } = req.body
@@ -89,6 +109,34 @@ app.delete('/items/:id', (req, res, next) => {
       message: 'Invalid item'
     })
   }
+})
+
+app.post('/outfits', async(req, res, next) => {
+  
+    const { name, items } = req.body
+    const createItems = items.map(async (itemDefinition) => {
+      return await Item.create(itemDefinition)
+    })
+    const createdItems = await Promise.all(createItems)
+    const createdOutfit = await Outfit.create({
+      name,
+      items: createdItems.map(item => item._id)
+    })
+    res.status(201).json({
+      status: 'success',
+      data: {
+        outfit: createdOutfit
+      }
+    })
+})
+
+app.get('/outfits', (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      items: database.items
+    }
+  })
 })
 
 // catch 404 and forward to error handler
