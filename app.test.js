@@ -2,7 +2,7 @@ const supertest = require('supertest');
 const mongoose = require('mongoose');
 const app = require('./app');
 const database = require('./database');
-const Item = require('./models/Item.model')
+const Item = require('./models/Items/Item.model')
 
 beforeAll(async(done) => {
     const url = 'mongodb://127.0.0.1/LuxuryOutfitRentalShop'
@@ -76,6 +76,50 @@ describe('POST /items', () => {
     })
 })
 
+describe('GET /items/:id', () => {
+    describe('valid id', () => {
+        const idToSearch = 'erd123f'
+        let res
+
+        beforeAll(() => {
+            database.items = {
+                erd123f: 'Blouse',
+                fgt34rfd: 'Jeans'
+            }
+        })
+        test('send a response of 200 when the id exists', async (done) => {
+            res = await supertest(app).get(`/items/${idToSearch}`)
+            expect(res.status).toBe(200)
+            done()
+        })
+        test('the response body sends back the created id', () => {
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    items: database.items[idToSearch]
+                }
+            })
+        })
+    })
+
+    describe('invalid id', () => {
+        let res
+        test('send a response of 404 when the id does not exist', async (done) => {
+            res = await supertest(app).get('/items/id')
+            expect(res.status).toBe(404)
+            done()
+        })
+        test('the response body sends back a failing message', async (done) => {
+            res = await supertest(app).get('/items/id')
+            expect(res.body).toMatchObject({
+                status: 'fail',
+                message: 'The item was not found'
+            })
+            done()
+        })
+    })
+})
+
 describe('DELETE /items/:id', () => {
     describe('valid id', () => {
         const idToDelete = 'erd123f'
@@ -97,11 +141,29 @@ describe('DELETE /items/:id', () => {
                 message: `Item ${idToDelete} has been deleted`
             })
         })
-        // test('The item has been removed from the database', () => {
-
-        // })
-        // test('Only that specific item has been deleted', () => {
-
-        // })
+        test('The item has been removed from the database', () => {
+            expect(database.items).not.toHaveProperty(idToDelete)
+        })
+        test('Only that specific item has been deleted', () => {
+            expect(Object.keys(database.items)).toHaveLength(1)
+            expect(database.items).toHaveProperty('fgt34rfd')
+        })
     })
 })
+
+// describe('POST /Outfit', async () => {
+//     describe('create a new outfit with items inside', () => {
+//         test('Respond with 201 when is successful', () => {
+
+//         })
+//         test('Returns the created outfit with the response', () => {
+
+//         })
+//         test('Creates an outfit that has an array of items ids', () => {
+
+//         })
+//         test('Has created an item for each of this associated ids', () => {
+
+//         })
+//     })
+// })

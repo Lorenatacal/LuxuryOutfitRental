@@ -23,7 +23,6 @@ describe('ItemModel', () => {
 
             const allItems = await ItemModel.find({})
             expect(allItems).toHaveLength(1)
-
             done()
         })
         test('Create a new entry', async (done) => {
@@ -37,7 +36,6 @@ describe('ItemModel', () => {
 
             const allItems = await ItemModel.find({})
             expect(allItems).toHaveLength(2)
-
             done()
         })
     })
