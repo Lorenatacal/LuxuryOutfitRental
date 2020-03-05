@@ -6,7 +6,9 @@ var logger = require('morgan');
 var database = require('./database');
 var Item = require('./models/Items/Item.model');
 var Outfit = require('./models/Outfits/Outfit.model');
-var User = require('./models/Users/User.model')
+var User = require('./models/Users/User.model');
+var OutfitRental = require('./models/OutfitRental/OutfitRental.model')
+const mongoose = require('mongoose')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -25,16 +27,12 @@ app.use(cookieParser());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-const items = {
-  bv45ft: 'Blouse',
-  fg67at: "Skirt"
-}
-
-app.get('/items', (req, res, next) => {
+app.get('/items', async (req, res, next) => {
+  const items = await Item.find({}, { lean: true })
   res.status(200).json({
     status: 'success',
     data: {
-      items
+      items: items.map(item => item._id)
     }
   })
 })
@@ -76,6 +74,40 @@ app.get('/outfits/:id', (req, res, next) => {
     })
   }
 })
+
+app.get('/signin', async (req, res, next) => {
+  const { email, password } = req.body
+  const user = await User.findOne({ email })
+
+  if(userExists){
+    if( await user.comparePassword(password)) {
+      res.status(200).json({
+        status: 'success',
+        data: {
+          username: user.username
+        },
+        token
+      })
+    } else {
+      req.status(404).json({
+        status: 'fail',
+        message: 'Unvalid information provided'
+      })
+    }
+  } else {
+      req.status(404).json({
+        status: 'fail',
+        message: 'Unvalid information provided'
+      })
+    }
+
+  const token = user.generateAuthToken()
+  res.status(201).json({
+    status: 'success',
+    token
+  })
+}) 
+//
 
 app.post('/items', async (req, res, next) => {
   try{
@@ -131,12 +163,11 @@ app.post('/outfits', async(req, res, next) => {
     })
 })
 
-app.get('/outfits', (req, res, next) => {
+app.get('/outfits', async (req, res, next) => {
+  const outfits = await Outfit.find({}, { lean: true })
   res.status(200).json({
     status: 'success',
-    data: {
-      items: database.items
-    }
+    outfits: outfits.map(outfit => outfit._id)
   })
 })
 
@@ -148,6 +179,17 @@ app.post('/signup', async (req, res, next) => {
   res.status(201).json({
     status: 'success',
     token
+  })
+})
+
+app.post('/outfitRental', async (req, res, next) => {
+  const {userId, outfitId, rentalStartDate, rentalEndDate } = req.body
+  const newOutfitRental = await OutfitRental.create({userId, outfitId, rentalStartDate, rentalEndDate})
+  res.status(201).json({
+    status: 'success',
+    data: {
+      outfitRental: newOutfitRental
+    }
   })
 })
 

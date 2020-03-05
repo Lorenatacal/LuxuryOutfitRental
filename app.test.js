@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const app = require('./app');
 const database = require('./database');
 const Item = require('./models/Items/Item.model');
-const Outfit = require('./models/Outfits/Outfit.model')
+const Outfit = require('./models/Outfits/Outfit.model');
+const User = require('./models/Users/User.model');
+const OutfitRental = require('./models/OutfitRental/OutfitRental.model')
 
 beforeAll(async(done) => {
     const url = 'mongodb://127.0.0.1/LuxuryOutfitRentalShop'
@@ -11,19 +13,60 @@ beforeAll(async(done) => {
     done()
 })
 
+describe('GET /outfits', () => {
+    let res
+    let outfit
+    let item 
+    beforeAll( async (done) => {
+        await Outfit.deleteMany({});
+        item = await Item.create({
+            name: 'Dior Shirt',
+            size: 'S',
+            collectionDate: 2019,
+            colour: 'red',
+            quantityInStock: 1
+        })
+        outfit = await Outfit.create({
+            name: 'Glamourous Dior Night Outfit',
+            items: [
+                item._id
+            ]
+        })
+        res = await supertest(app).get('/outfits')
+        done()
+    })
+    test('send a response of 200', () => {
+        expect(res.status).toBe(200)
+    })
+    test('returns the outfits when successful', () => {
+        expect(res.body).toMatchObject({
+            status: 'success',
+            outfits: [outfit._id.toString()]
+        })
+    })
+})
+
 describe('GET /items', () => {
     let res
-
-    beforeAll(async (done) => {
+    let item
+    beforeAll( async (done) => {
+        await Item.deleteMany({});
+        item = await Item.create({
+            name: 'Dior Shirt',
+            size: 'S',
+            collectionDate: 2019,
+            colour: 'red',
+            quantityInStock: 1
+        })
         res = await supertest(app).get('/items')
         done()
     })
     test('send a response of 200', () => {
         expect(res.status).toBe(200)
     })
-    test('sends back a body which is formatted following JSend guidelines', () => {
+    test('returns the items when successful', () => {
         expect(res.body).toMatchObject({
-            status: 'success'
+            status: 'success',
         })
     })
 })
@@ -151,7 +194,7 @@ describe('DELETE /items/:id', () => {
     })
 })
 
-describe('POST /Outfit', async () => {
+describe('POST /Outfit', () => {
     describe('create a new outfit with items inside', () => {
         let res, createdOutfit
         beforeAll(async (done) => {
@@ -216,20 +259,61 @@ describe('POST /Outfit', async () => {
     })
 })
 
-describe('Get /Outfits', () => {
-    let res
+describe('POST /OutfitRental', () => {
+    describe('creates a new item reservation with items inside', () => {
+        let res, item, outfit, user, outfitId, userId
 
-    beforeAll(async(done) => {
-        res = await supertest(app).get('/outfits')
+    beforeAll(async (done) => {
+        item = await Item.create({
+            name: 'Skirt',
+            size: 'S',
+            collectionDate: 2019,
+            colour: 'black',
+            quantityInStock: 1
+        })
+        outfit = await Outfit.create({
+            name: 'Glamourous Dior Night Outfit',
+            items: [item._id]
+        })
+        user = await User.create({
+            email: 'tudortatac@domain.com',
+            password: 'jhgjg757'
+        })
+
+        outfitId = outfit.id
+        userId = user.id
+
+        res = await supertest(app).post('/outfitRental').send({
+            userId: userId,
+            outfitId: outfitId,
+            rentalStartDate: '2020/02/10',
+            rentalEndDate: '2020/02/12'
+        })
         done()
     })
-    test('send a response of 200', () => {
-        expect(res.status).toBe(200)
+    test('Responds with 201 when successful', () => {
+        expect(res.status).toBe(201)
     })
-    test('sends back a body with a status of success', () => {
+    test('Returns the created outfitRental with the response', () => {
         expect(res.body).toMatchObject({
-            status: 'success'
+            status: 'success',
+            data: {
+                outfitRental: {
+                    userId: userId,
+                    outfitId: outfitId,
+                    rentalStartDate: '2020/02/10',
+                    rentalEndDate: '2020/02/12'
+                }
+            }
         })
+    })
+    // test('Creates an outfitRental that has an array of outfits id', () => {
+
+    // })
+    // test('Hs created an outfit for each of this associated ids', () => {
+
+    // })
+
     })
 })
 
@@ -277,6 +361,7 @@ describe('POST /signup', () => {
 
     beforeAll(async (done) => {
         res = await supertest(app).post('/signup').send({
+            name: 'Tudor Tacal',
             email: 'tudor@domain.com',
             password: 'hjgvhgdcfdy36ere'
         })
@@ -288,4 +373,10 @@ describe('POST /signup', () => {
     test('sends back an autorhisation token', () => {
         expect(typeof res.body.token).toBe('string')
     })
+})
+
+describe('GET /signin', () => {
+    let res
+
+
 })
