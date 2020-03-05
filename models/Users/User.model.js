@@ -11,11 +11,11 @@ const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        // validate: {
-        //     validator: function() {
-        //         return validator.default.isEmail(this.email)
-        //     }
-        // }
+        validate: {
+            validator: function() {
+                return validator.default.isEmail(this.email)
+            }
+        }
     },
     password: {
         type: String,
@@ -25,9 +25,9 @@ const UserSchema = new mongoose.Schema({
     }
 })
 
-// UserSchema.methods.generateAuthToken = function () {
-//     return jwt.sign(this.id, process.env.JWT_SECRET)
-// }
+UserSchema.methods.generateAuthToken = function () {
+    return jwt.sign(this.id, process.env.JWT_SECRET)
+}
 
 UserSchema.pre('save', async function () {
     const salt = await bcrypt.genSalt(10)

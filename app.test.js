@@ -120,46 +120,6 @@ describe('GET /items/:id', () => {
     })
 })
 
-describe('GET /outfits/:id', () => {
-    describe('valid id', () => {
-        let idToSerch
-        let res
-
-        beforeAll(() => {
-            database.outfits = {
-                ard12drs: 'Dior Night Outfit',
-                fgt34rfd: 'Dior Day Outfit'
-            }
-            idToSerch = 'ard12drs'
-        })
-        test('send a response of 200 when the id exists', async (done) => {
-            res = await supertest(app).get(`/outfits/${idToSerch}`)
-            expect(res.status).toBe(200)
-            done()
-        })
-        test('the response body sends back the expected id', () => {
-            expect(res.body).toMatchObject({
-                status: 'success',
-                data: {
-                    outfit: database.outfits[idToSerch]
-                }
-            })
-        })
-    })
-    describe('invalid id', () => {
-        let res
-        test('send a response of 404 when the id does not exist', async (done) => {
-            res = await supertest(app).get(`/outfits/${'fdghfà23'}`)
-            expect(res.status).toBe(404)
-            expect(res.body).toMatchObject({
-                status: 'fail',
-                message: `The outfit with the id: ${'fdghfà23'} does not exist`
-            })
-            done()
-        })
-    })
-})
-
 describe('DELETE /items/:id', () => {
     describe('valid id', () => {
         const idToDelete = 'erd123f'
@@ -270,5 +230,62 @@ describe('Get /Outfits', () => {
         expect(res.body).toMatchObject({
             status: 'success'
         })
+    })
+})
+
+describe('GET /outfits/:id', () => {
+    describe('valid id', () => {
+        let idToSerch
+        let res
+
+        beforeAll(() => {
+            database.outfits = {
+                ard12drs: 'Dior Night Outfit',
+                fgt34rfd: 'Dior Day Outfit'
+            }
+            idToSerch = 'ard12drs'
+        })
+        test('send a response of 200 when the id exists', async (done) => {
+            res = await supertest(app).get(`/outfits/${idToSerch}`)
+            expect(res.status).toBe(200)
+            done()
+        })
+        test('the response body sends back the expected id', () => {
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    outfit: database.outfits[idToSerch]
+                }
+            })
+        })
+    })
+    describe('invalid id', () => {
+        let res
+        test('send a response of 404 when the id does not exist', async (done) => {
+            res = await supertest(app).get(`/outfits/${'fdghfà23'}`)
+            expect(res.status).toBe(404)
+            expect(res.body).toMatchObject({
+                status: 'fail',
+                message: `The outfit with the id: ${'fdghfà23'} does not exist`
+            })
+            done()
+        })
+    })
+})
+describe('POST /signup', () => {
+    let res
+
+    beforeAll(async (done) => {
+        res = await supertest(app).post('/signup').send({
+            email: 'tudor@domain.com',
+            password: 'hjgvhgdcfdy36ere'
+        })
+        done()
+    })
+    test('send back a response of 201', () => {
+        expect(res.status).toBe(201)
+    })
+    test('sends back an autorhisation token', () => {
+        expect(typeof res.body.token).toBe('string')
     })
 })

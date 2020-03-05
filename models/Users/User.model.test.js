@@ -25,3 +25,36 @@ describe('Password storage', () => {
         done()
     })
 })
+
+describe('Validation', () => {
+    describe('Emails validation', () => {
+        describe('Emails to accept', () => {
+            test('tudor@domain.com', async (done) => {
+                await User.create({ email: "tudor@domain.com", password: 'randomPassword'}, (err) => {
+                    expect(err).toBeNull()
+                    done()
+                })
+            })
+            test('tudor@domain.co.uk', async (done) => {
+                await User.create({ email: "tudor@domain.co.uk", password: 'randomPassword' }, (err) => {
+                    expect(err).toBeNull()
+                    done()
+                })
+            })
+        })
+        describe('Emails to reject', () => {
+            test('tudor@', async (done) => {
+                await User.create({ email: "tudor@", password: 'randomPassword' }, (err) => {
+                    expect(err).not.toBeNull()
+                    done()
+                })
+            })
+            test('tudor@domain', async (done) => {
+                await User.create({  email: "tudor@domain", password: 'randomPassword' }, (err) => {
+                    expect(err).not.toBeNull()
+                    done()
+                })
+            })
+        })
+    })
+})

@@ -5,7 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var database = require('./database');
 var Item = require('./models/Items/Item.model');
-var Outfit = require('./models/Outfits/Outfit.model')
+var Outfit = require('./models/Outfits/Outfit.model');
+var User = require('./models/Users/User.model')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -136,6 +137,17 @@ app.get('/outfits', (req, res, next) => {
     data: {
       items: database.items
     }
+  })
+})
+
+app.post('/signup', async (req, res, next) => {
+  const { email, password } = req.body
+  const user = await User.create({ email, password})
+
+  const token = user.generateAuthToken()
+  res.status(201).json({
+    status: 'success',
+    token
   })
 })
 
