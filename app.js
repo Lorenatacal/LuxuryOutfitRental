@@ -37,40 +37,50 @@ app.get('/items', async (req, res, next) => {
   })
 })
 
-app.get('/items/:id', (req, res, next) => {
-  const { id } = req.params
-  const doesItemExist = database.items[id]
+app.get('/outfits/:id', async (req, res, next) => {
+  const outfit = await Outfit.findById(req.params.id)
 
-  if(doesItemExist) {
+  if(outfit) {
     res.status(200).json({
       status: 'success',
-      data: {
-        items: database.items[id]
-      }
+      outfit: outfit.name
+    })
+  } else {
+    res.status(404).json({
+      status: 'fail',
+      message: `The outfit with the id: ${req.params.id} does not exist`
+    })
+  }
+})
+app.delete('/items/:id', async (req, res, next) => {
+  try{
+    const { id } = req.params
+    // const item = await Item.findById(req.params.id)
+    await Item.deleteOne({ id })
+    console.log('jgvkg')
+    res.status(200).json({
+      status: 'success',
+      message: `Item ${ id } has been deleted`
+    })
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid item'
+    })
+  }
+})
+
+app.get('/items/:id', async (req, res, next) => {
+  const item = await Item.findById(req.params.id)
+  if(item) {
+    res.status(200).json({
+      status: 'success',
+      item: item.name
     })
   } else {
     res.status(404).json({
       status: 'fail',
       message: 'The item was not found'
-    })
-  }
-})
-
-app.get('/outfits/:id', (req, res, next) => {
-  const { id } = req.params
-  const doesOutfitExist = database.outfits[id]
-
-  if(doesOutfitExist) {
-    res.status(200).json({
-      status: 'success',
-      data: {
-        outfit: database.outfits[id]
-      }
-    })
-  } else {
-    res.status(404).json({
-      status: 'fail',
-      message: `The outfit with the id: ${id} does not exist`
     })
   }
 })
@@ -121,22 +131,6 @@ app.post('/items', async (req, res, next) => {
       }
     })
   }catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: 'Invalid item'
-    })
-  }
-})
-
-app.delete('/items/:id', (req, res, next) => {
-  try{
-    const { id } = req.params
-    delete database.items[id]
-    res.status(200).json({
-      status: 'success',
-      message: `Item ${id} has been deleted`
-    })
-  } catch (err) {
     res.status(400).json({
       status: 'fail',
       message: 'Invalid item'

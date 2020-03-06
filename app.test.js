@@ -13,39 +13,6 @@ beforeAll(async(done) => {
     done()
 })
 
-describe('GET /outfits', () => {
-    let res
-    let outfit
-    let item 
-    beforeAll( async (done) => {
-        await Outfit.deleteMany({});
-        item = await Item.create({
-            name: 'Dior Shirt',
-            size: 'S',
-            collectionDate: 2019,
-            colour: 'red',
-            quantityInStock: 1
-        })
-        outfit = await Outfit.create({
-            name: 'Glamourous Dior Night Outfit',
-            items: [
-                item._id
-            ]
-        })
-        res = await supertest(app).get('/outfits')
-        done()
-    })
-    test('send a response of 200', () => {
-        expect(res.status).toBe(200)
-    })
-    test('returns the outfits when successful', () => {
-        expect(res.body).toMatchObject({
-            status: 'success',
-            outfits: [outfit._id.toString()]
-        })
-    })
-})
-
 describe('GET /items', () => {
     let res
     let item
@@ -120,76 +87,75 @@ describe('POST /items', () => {
     })
 })
 
-describe('GET /items/:id', () => {
-    describe('valid id', () => {
-        const idToSearch = 'erd123f'
-        let res
-
-        beforeAll(() => {
-            database.items = {
-                erd123f: 'Blouse',
-                fgt34rfd: 'Jeans'
-            }
-        })
-        test('send a response of 200 when the id exists', async (done) => {
-            res = await supertest(app).get(`/items/${idToSearch}`)
-            expect(res.status).toBe(200)
-            done()
-        })
-        test('the response body sends back the created id', () => {
-            expect(res.body).toMatchObject({
-                status: 'success',
-                data: {
-                    items: database.items[idToSearch]
-                }
-            })
-        })
-    })
-    describe('invalid id', () => {
-        let res
-        test('send a response of 404 when the id does not exist', async (done) => {
-            res = await supertest(app).get(`/items/${'fdghfà23'}`)
-            expect(res.status).toBe(404)
-            done()
-        })
-        test('the response body sends back a failing message', async (done) => {
-            res = await supertest(app).get('/items/id')
-            expect(res.body).toMatchObject({
-                status: 'fail',
-                message: 'The item was not found'
-            })
-            done()
-        })
-    })
-})
-
 describe('DELETE /items/:id', () => {
     describe('valid id', () => {
-        const idToDelete = 'erd123f'
-        let res
-
-         beforeAll(() => {
-             database.items = {
-                erd123f: 'Blouse',
-                fgt34rfd: 'Jeans'
-             }
-         })
-
-        test('A response will be sent back when the item is deleted', async () => {
+        let res, item, idToDelete
+        beforeAll(async (done) => {
+            item = await Item.create({
+                name: 'Dior Shirt',
+                size: 'S',
+                collectionDate: 2019,
+                colour: 'red',
+                quantityInStock: 1
+            })
+            idToDelete = item.id
             res = await supertest(app).delete(`/items/${idToDelete}`)
-    
+            done()
+        })
+        test('A response will be sent back when the item is deleted', async () => {
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({
                 status: 'success',
                 message: `Item ${idToDelete} has been deleted`
             })
         })
-        test('The item has been removed from the database', () => {
-            expect(database.items).not.toHaveProperty(idToDelete)
+    })
+})
+
+describe('GET /items/:id', () => {
+    describe('valid id', () => {
+        let res, item, itemToSearch
+
+        beforeAll(async (done) => {
+            await Item.deleteMany({})
+            item = await Item.create({
+                name: 'Dior Shirt',
+                size: 'S',
+                collectionDate: 2019,
+                colour: 'red',
+                quantityInStock: 1
+            })
+            itemToSearch = await Item.findOne({}),
+            res = await supertest(app).get(`/items/${itemToSearch._id}`)
+            done()
         })
-        test('Only that specific item has been deleted', () => {
-            expect(Object.keys(database.items)).toHaveLength(1)
-            expect(database.items).toHaveProperty('fgt34rfd')
+        test('send a response of 200 when the id exists', async (done) => {
+            expect(res.status).toBe(200)
+            expect(res.body).toMatchObject({
+                status: 'success',
+                item: item.name
+            })
+            done()
+        })
+    })
+    describe('invalid id', () => {
+        let res, itemToSearch
+        test('send a response of 404 when the id does not exist', async (done) => {
+            itemToSearch = {
+                id: '5e6235461339dc82e90d461f',
+                name: 'Dior Shirt',
+                size: 'S',
+                collectionDate: 2019,
+                colour: 'red',
+                quantityInStock: 1,
+            }
+            res = await supertest(app).get(`/items/${itemToSearch.id}`)
+            expect(res.status).toBe(404)
+            expect(res.body).toMatchObject({
+                status: 'fail',
+                message: 'The item was not found'
+            })
+            done()
         })
     })
 })
@@ -258,104 +224,94 @@ describe('POST /Outfit', () => {
         })
     })
 })
-
-describe('POST /OutfitRental', () => {
-    describe('creates a new item reservation with items inside', () => {
-        let res, item, outfit, user, outfitId, userId
-
-    beforeAll(async (done) => {
+describe('GET /outfits', () => {
+    let res
+    let outfit
+    let item 
+    beforeAll( async (done) => {
+        await Outfit.deleteMany({});
         item = await Item.create({
-            name: 'Skirt',
+            name: 'Dior Shirt',
             size: 'S',
             collectionDate: 2019,
-            colour: 'black',
+            colour: 'red',
             quantityInStock: 1
         })
         outfit = await Outfit.create({
             name: 'Glamourous Dior Night Outfit',
-            items: [item._id]
+            items: [
+                item._id
+            ]
         })
-        user = await User.create({
-            email: 'tudortatac@domain.com',
-            password: 'jhgjg757'
-        })
-
-        outfitId = outfit.id
-        userId = user.id
-
-        res = await supertest(app).post('/outfitRental').send({
-            userId: userId,
-            outfitId: outfitId,
-            rentalStartDate: '2020/02/10',
-            rentalEndDate: '2020/02/12'
-        })
+        res = await supertest(app).get('/outfits')
         done()
     })
-    test('Responds with 201 when successful', () => {
-        expect(res.status).toBe(201)
+    test('send a response of 200', () => {
+        expect(res.status).toBe(200)
     })
-    test('Returns the created outfitRental with the response', () => {
+    test('returns the outfits when successful', () => {
         expect(res.body).toMatchObject({
             status: 'success',
-            data: {
-                outfitRental: {
-                    userId: userId,
-                    outfitId: outfitId,
-                    rentalStartDate: '2020/02/10',
-                    rentalEndDate: '2020/02/12'
-                }
-            }
+            outfits: [outfit._id.toString()]
         })
-    })
-    // test('Creates an outfitRental that has an array of outfits id', () => {
-
-    // })
-    // test('Hs created an outfit for each of this associated ids', () => {
-
-    // })
-
     })
 })
 
 describe('GET /outfits/:id', () => {
     describe('valid id', () => {
-        let idToSerch
-        let res
+        let outfitToSearch
+        let res, item, outfit
 
-        beforeAll(() => {
-            database.outfits = {
-                ard12drs: 'Dior Night Outfit',
-                fgt34rfd: 'Dior Day Outfit'
-            }
-            idToSerch = 'ard12drs'
+        beforeAll( async (done) => {
+            await Outfit.deleteMany({})
+            item = await Item.create({
+                name: 'Dior Shirt',
+                size: 'S',
+                collectionDate: 2019,
+                colour: 'red',
+                quantityInStock: 1
+            })
+            outfit = await Outfit.create({
+                name: 'Glamourous Dior Night Outfit',
+                items: [
+                    item._id
+                ]
+            })
+            outfitToSearch = await Outfit.findOne({})
+            res = await supertest(app).get(`/outfits/${outfitToSearch._id}`)
+            done()
+            
         })
         test('send a response of 200 when the id exists', async (done) => {
-            res = await supertest(app).get(`/outfits/${idToSerch}`)
             expect(res.status).toBe(200)
             done()
         })
         test('the response body sends back the expected id', () => {
             expect(res.body).toMatchObject({
                 status: 'success',
-                data: {
-                    outfit: database.outfits[idToSerch]
-                }
+                outfit: outfit.name
             })
         })
     })
     describe('invalid id', () => {
-        let res
+        let res, outfitToSearch
         test('send a response of 404 when the id does not exist', async (done) => {
-            res = await supertest(app).get(`/outfits/${'fdghfà23'}`)
+            outfitToSearch = {
+                items: [ '5e62236624e7a477dc120a82' ],
+                id: '5e62236624e7a477dc120a83',
+                name: 'Glamourous Dior Night Outfit'
+            }
+            res = await supertest(app).get(`/outfits/${outfitToSearch.id}`)
             expect(res.status).toBe(404)
             expect(res.body).toMatchObject({
                 status: 'fail',
-                message: `The outfit with the id: ${'fdghfà23'} does not exist`
+                message: `The outfit with the id: ${outfitToSearch.id} does not exist`
             })
             done()
         })
     })
 })
+
 describe('POST /signup', () => {
     let res
 
@@ -375,8 +331,62 @@ describe('POST /signup', () => {
     })
 })
 
-describe('GET /signin', () => {
-    let res
+describe('POST /OutfitRental', () => {
+    describe('creates a new item reservation with items inside', () => {
+        let res, item, outfit, user, outfitId, userId, numOfOutfitRentalBefore, numOfOutfitRentalAfter, createdOutfitReservation
 
+        beforeAll(async (done) => {
+            const outfitRentalBefore = await OutfitRental.find({})
+            numOfOutfitRentalBefore = outfitRentalBefore.length
+            item = await Item.create({
+                name: 'Skirt',
+                size: 'S',
+                collectionDate: 2019,
+                colour: 'black',
+                quantityInStock: 1
+            })
+            outfit = await Outfit.create({
+                name: 'Glamourous Dior Night Outfit',
+                items: [item._id]
+            })
+            user = await User.create({
+                email: 'tudortatac@domain.com',
+                password: 'jhgjg757'
+            })
 
+            outfitId = outfit.id
+            userId = user.id
+
+            res = await supertest(app).post('/outfitRental').send({
+                userId: userId,
+                outfitId: outfitId,
+                rentalStartDate: '2020/02/10',
+                rentalEndDate: '2020/02/12'
+            })
+
+            const outfitRentalAfter = await OutfitRental.find({})
+            numOfOutfitRentalAfter = outfitRentalAfter.length
+            done()
+        })
+        test('Responds with 201 when successful', () => {
+            expect(res.status).toBe(201)
+        })
+        test('Returns the created outfitRental with the response', () => {
+            expect(res.body).toMatchObject({
+                status: 'success',
+                data: {
+                    outfitRental: {
+                        userId: userId,
+                        outfitId: outfitId,
+                        rentalStartDate: '2020/02/10',
+                        rentalEndDate: '2020/02/12'
+                    }
+                }
+            })
+            createdOutfitReservation = res.body.data.outfitRental
+        })
+        test('Only one outfitRental exists in the database', () => {
+            expect(numOfOutfitRentalAfter).toEqual(numOfOutfitRentalBefore + 1)
+        })
+    })
 })
